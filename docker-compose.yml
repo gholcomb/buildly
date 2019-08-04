@@ -1,0 +1,102 @@
+version: "2.0"
+
+services:
+
+  postgres_bifrost:
+    container_name: postgres_bifrost
+    image: postgres:9.6
+    environment:
+      POSTGRES_DB: bifrost
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    volumes:
+      - /var/lib/postgresql/data/
+    restart: always
+
+  rabbitmq_bifrost:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_bifrost
+    environment:
+      RABBITMQ_DEFAULT_USER: "admin"
+      RABBITMQ_DEFAULT_PASS: "admin"
+      RABBITMQ_DEFAULT_VHOST: "celery_vhost"
+    ports:
+      - "15672:15672"
+
+  bifrost:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: bash /code/run-standalone-dev.sh
+    container_name: bifrost
+    image: bifrost
+    volumes:
+      - .:/code
+      - static-content:/static
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres_bifrost
+      - rabbitmq_bifrost
+    environment:
+      DJANGO_SETTINGS_MODULE: "bifrost-api.settings.production"
+      ALLOWED_HOSTS: "*"
+      CORS_ORIGIN_WHITELIST: "*"
+      DATABASE_ENGINE: "postgresql"
+      DATABASE_NAME: "bifrost"
+      DATABASE_USER: "root"
+      DATABASE_PASSWORD: "root"
+      DATABASE_HOST: "postgres_bifrost"
+      DATABASE_PORT: "5432"
+      DEFAULT_OAUTH_DOMAINS: "toladata.com,humanitec.com"
+      DEFAULT_ORG: "Default Organization"
+      DOCUMENTATION_URL: "https://humanitec.gitbook.io/frontend-guide/"
+      API_URL: "/api/docs"
+      JWT_ISSUER: "bifrost"
+      JWT_PRIVATE_KEY_RSA_BIFROST: |-
+        -----BEGIN RSA PRIVATE KEY-----
+        MIIBOwIBAAJBALFc9NFZaOaSwUMPNektbtJqEjYZ6IRBqhqvJu1hKPYn9HYd75c0
+        gIDYHJ9lb7QwQvg44aO27104rDK0xSstzL0CAwEAAQJAe5z5096oyeqGX6J+RGGx
+        11yuDJ7J+0N4tthUHSWWUtgkd19NvmTM/mVLmPCzZHgNUT+aWUKsQ84+jhru/NQD
+        0QIhAOHOzFmjxjTAR1jspn6YtJBKQB40tvT6WEvm2mKm0aD7AiEAyRPwXyZf3JT+
+        M6Ui0Mubs7Qb/E4g1d/kVL+o/XoZC6cCIQC+nKzPtnooKW+Q1yOslgdGDgeV9/XB
+        Ulqap+MNh7hJZQIgZNaM+wqhlFtbx8aO2SrioJI4XqVHrjojpaSgOM3cdY0CIQDB
+        Q6ckOaDV937acmWuiZhxuG2euNLwNbMldtCV5ADo/g==
+        -----END RSA PRIVATE KEY-----
+      JWT_PUBLIC_KEY_RSA_BIFROST: |-
+        -----BEGIN PUBLIC KEY-----
+        MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBALFc9NFZaOaSwUMPNektbtJqEjYZ6IRB
+        qhqvJu1hKPYn9HYd75c0gIDYHJ9lb7QwQvg44aO27104rDK0xSstzL0CAwEAAQ==
+        -----END PUBLIC KEY-----
+      RABBIT_HOST: "rabbitmq_bifrost"
+      RABBIT_PORT: "5672"
+      RABBIT_USER: "admin"
+      RABBIT_PASS: "admin"
+      RABBIT_VHOST: "celery_vhost"
+      RABBIT_WALHALL_QUEUE: "bifrost_queue"
+      SOCIAL_AUTH_GITHUB_KEY: "533efabdff3f84ea7a62"
+      SOCIAL_AUTH_GITHUB_SECRET: "6d211c2642fbbb5b0698ccc20509ae5390d00d33"
+      SOCIAL_AUTH_GITHUB_REDIRECT_URL: "https://localhost:8000/complete/github"
+      SOCIAL_AUTH_GOOGLE_OAUTH2_KEY: "1090285679254-ep8e9kh2p2juqq8u169fqr5ijfnuaihm.apps.googleusercontent.com"
+      SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET: "kfy1DGJ3POZYtWMGX0l1yoMi"
+      SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URL: "https://localhost:8000/complete/google-oauth2"
+      SOCIAL_AUTH_GOOGLE_OAUTH2_WHITELISTED_DOMAINS: "gmail.com"
+      SOCIAL_AUTH_LOGIN_REDIRECT_URL: "http://localhost:8080/"
+      SOCIAL_AUTH_MICROSOFT_GRAPH_KEY: "63783b55-0c15-4e94-8ceb-4de040fea71d"
+      SOCIAL_AUTH_MICROSOFT_GRAPH_REDIRECT_URL: "https://localhost:8000/complete/microsoft-graph"
+      SOCIAL_AUTH_MICROSOFT_GRAPH_SECRET: "w8zgk5dz5JVErCNzc8Jz7EM"
+      ACCESS_TOKEN_EXPIRE_SECONDS: "86400"
+      TOLA_TRACK_SYNC_ENABLED: "False"
+      SECRET_KEY: "ek*)b=mtcc7q1cym@oox(lyrz1ncz-(w+(#&u7l-&)7a8wv#_k"
+      OAUTH_CLIENT_ID: "wkXLlC9h3k0jxIx7oLllxpFVU89Dxgi7O8FYZyfX"
+      OAUTH_CLIENT_SECRET: "KiKRft8MajLabQId7pjSsa3OfvJAXN9NENi0tVRTX3Vbthr6iClEDZZtbyGuD9M8UbKpK2E8R4xJYUolZxg1nVa1iZwhQPi5ionOKdpIs4de2bmUaZ0qWi4MdBmdwDvF"
+      SOCIAL_AUTH_CLIENT_ID: "vBn4KsOCthm7TWzMH0kVV0dXkUPJEtOQwaLu0eoC"
+      SOCIAL_AUTH_CLIENT_SECRET: "0aYDOHUNAxK4MjbnYOHhfrKx8Ezj3jd7aKq2C7yRDZ6FbAL4SgRFxY8N6GbB6IGyCgpT6pmQ5pEVJmH7mIEUJxyXKbta7ebxULLULjXwnJYGhUgT2hPyCfptkWFhsZVV"
+      USE_PASSWORD_USER_ATTRIBUTE_SIMILARITY_VALIDATOR: "True"
+      USE_PASSWORD_MINIMUM_LENGTH_VALIDATOR: "True"
+      PASSWORD_MINIMUM_LENGTH: "6"
+      USE_PASSWORD_COMMON_VALIDATOR: "True"
+      USE_PASSWORD_NUMERIC_VALIDATOR: "True"
+
+volumes:
+  static-content:

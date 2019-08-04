@@ -1,0 +1,6 @@
+*.pyc
+.pytest_cache
+.idea
+*.log
+*/settings/local.py
+/data/
